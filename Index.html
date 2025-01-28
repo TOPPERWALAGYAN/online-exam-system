@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Exam System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #74ebd5, #9face6);
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        .button {
+            background-color: #4CAF50; /* Green */
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .question {
+            margin: 20px 0;
+            font-size: 24px;  /* Increased font size */
+            text-align: left; /* Align text to the left */
+            width: 100%; /* Full width */
+            max-width: 600px; /* Limit width for readability */
+        }
+        .result {
+            margin-top: 20px;
+            background-color: #f2f2f2;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .timer {
+            font-size: 24px;
+            color: red;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        table {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 600px; /* Limit width for readability */
+            background-color: #e0f7fa; /* Light cyan background for answer key */
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .image-box {
+            width: 80px; /* Width of the image box */
+            height: 80px; /* Height of the image box */
+            border: 1px solid #ddd;
+            margin: 5px;
+            display: inline-block;
+        }
+        .clearfix {
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+    <div id="content"></div>
+    <div id="timer" class="timer"></div> <!-- Timer positioned here -->
+
+    <script>
+        let currentPage = 0;
+        let userName = "";
+        let userEmail = "";
+        let answers = [];
+        const totalQuestions = 5; // Number of questions
+        let timer;
+        let timeLeft = 15 * 60; // 15 minutes in seconds
+
+        const questions = [
+            { question: "What is the SI unit of power?", options: ["A. Watt", "B. Joule", "C. Newton", "D. Pascal"], answer: 0 },
+            { question: "Which law of motion explains the concept of inertia?", options: ["A. Newton's First Law", "B. Newton's Second Law", "C. Newton's Third Law", "D. Law of Gravitation"], answer: 0 },
+            { question: "The speed of light in a vacuum is approximately:", options: ["A. 3×10^8 m/s", "B. 1.5×10^8 m/s", "C. 3×10^6 m/s", "D. 1.5×10^6 m/s"], answer: 0 },
+            { question: "What is the momentum of a 2 kg object moving with a velocity of 3 m/s?", options: ["A. 5 kg·m/s", "B. 6 kg·m/s", "C. 9 kg·m/s", "D. 12 kg·m/s"], answer: 1 },
+            { question: "The gravitational force between two objects depends on:", options: ["A. Their masses and the distance between them", "B. Their velocities and the distance between them", "C. Their masses and velocities", "D. Their volumes and distance"], answer: 0 }
+        ];
+
+        function showIntroduction() {
+            document.getElementById("content").innerHTML = `
+                <h1>Welcome to the Online Exam System</h1>
+                <p>Welcome to the Online Exam System, a platform designed for students to practice and enhance their knowledge. This module provides a user-friendly interface, a timed mock test environment, and immediate feedback. With personalized reports, students can analyze their performance and focus on areas for improvement. Begin your journey towards success!</p>
+                <button class="button" onclick="continueToDetails()">Continue</button>
+            `;
+        }
+
+        function continueToDetails() {
+            document.getElementById("content").innerHTML = `
+                <h1>Enter Your Details</h1>
+                <input type="text" id="name" placeholder="Enter Your Name" required>
+                <input type="email" id="email" placeholder="Enter Your Email" required>
+                <button class="button" onclick="startTest()">Start Test</button>
+            `;
+        }
+
+        function startTest() {
+            userName = document.getElementById("name").value;
+            userEmail = document.getElementById("email").value;
+            if (!userName || !userEmail) {
+                alert("Please enter both your name and email.");
+                return;
+            }
+            currentPage = 0;
+            answers = new Array(totalQuestions);
+            startTimer();
+            showQuestion();
+        }
+
+        function startTimer() {
+            timer = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    submitTest();
+                } else {
+                    timeLeft--;
+                    document.getElementById("timer").innerHTML = `Time Left: ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`;
+                }
+            }, 1000);
+        }
+
+        function showQuestion() {
+            const question = questions[currentPage];
+            document.getElementById("content").innerHTML = `
+                <h1>Question ${currentPage + 1}</h1>
+                <div class="question">${question.question}</div>
+                <div>${question.options.map((option, index) => `<input type="radio" name="question${currentPage}" value="${index}"> ${option}<br>`).join('')}</div>
+                <div class="image-box"></div> <!-- Placeholder for the question image -->
+                <button class="button" onclick="saveAndNext()">Save and Next</button>
+                <button class="button" onclick="unansweredAndNext()">Unanswered and Next</button>
+                ${currentPage === totalQuestions - 1 ? `<button class="button" onclick="finalSubmit()">Final Submit</button>` : `<button class="button" onclick="fullSubmit()">Full Submit</button>`}
+            `;
+        }
+
+        function saveAndNext() {
+            const selectedOption = document.querySelector(`input[name="question${currentPage}"]:checked`);
+            if (selectedOption) {
+                answers[currentPage] = parseInt(selectedOption.value);
+            }
+            currentPage++;
+            if (currentPage < totalQuestions) {
+                showQuestion();
+            } else {
+                submitTest();
+            }
+        }
+
+        function unansweredAndNext() {
+            currentPage++;
+            if (currentPage < totalQuestions) {
+                showQuestion();
+            } else {
+                submitTest();
+            }
+        }
+
+        function fullSubmit() {
+            currentPage++;
+            if (currentPage < totalQuestions) {
+                showQuestion();
+            } else {
+                submitTest();
+            }
+        }
+
+        function finalSubmit() {
+            submitTest();
+        }
+
+        function submitTest() {
+            clearInterval(timer);
+            let score = 0;
+            let correctAnswers = 0;
+            let incorrectAnswers = 0;
+            let attemptedQuestions = 0;
+
+            questions.forEach((q, index) => {
+                if (answers[index] !== undefined) {
+                    attemptedQuestions++;
+                    if (answers[index] === q.answer) {
+                        score += 1;
+                        correctAnswers++;
+                    } else {
+                        score -= 0.25;
+                        incorrectAnswers++;
+                    }
+                }
+            });
+
+            showResults(score, attemptedQuestions, correctAnswers, incorrectAnswers);
+        }
+
+        function showResults(score, attempted, correct, incorrect) {
+            document.getElementById("content").innerHTML = `
+                <div class="result">
+                    <h1>Results Summary</h1>
+                    <p>Total Marks Obtained: ${score.toFixed(2)}</p>
+                    <p>Number of Attempted Questions: ${attempted}</p>
+                    <p>Number of Correct Answers: ${correct}</p>
+                    <p>Number of Incorrect Answers: ${incorrect}</p>
+                    <p>Number of Unattempted Questions: ${totalQuestions - attempted}</p>
+                    <button class="button" onclick="showAnswerKey()">View Answer Key</button>
+                </div>
+            `;
+        }
+
+        function showAnswerKey() {
+            let answerKeyHtml = `
+                <h1>Answer Key</h1>
+                <table>
+                    <tr>
+                        <th>Question</th>
+                        <th>Chosen Option</th>
+                        <th>Correct Answer</th>
+                    </tr>
+            `;
+            questions.forEach((q, index) => {
+                const chosen = answers[index] !== undefined ? questions[index].options[answers[index]] : "Not Answered";
+                const correct = questions[index].options[q.answer];
+                answerKeyHtml += `
+                    <tr>
+                        <td>${q.question}</td>
+                        <td>${chosen}</td>
+                        <td>${correct}</td>
+                    </tr>
+                `;
+            });
+            answerKeyHtml += `</table><button class="button" onclick="showIntroduction()">Back to Start</button>`;
+            document.getElementById("content").innerHTML = answerKeyHtml;
+        }
+
+        // Start the introduction page
+        showIntroduction();
+    </script>
+</body>
+</html>
